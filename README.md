@@ -1,4 +1,4 @@
-# lovesync
+# LoveSync
 
 ## Project setup
 ```
