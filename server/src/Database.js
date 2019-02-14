@@ -1,5 +1,6 @@
 import Sequelize from 'sequelize';
 import bcrypt from 'bcrypt';
+import UUIDv4 from 'uuid/v4';
 
 export default class Database {
   constructor(filePath, saltRound) {
@@ -7,7 +8,7 @@ export default class Database {
     this.db = new Sequelize({
       dialect: 'sqlite',
       storage: filePath,
-      logging: false,
+      // logging: false,
     });
     this.models = {
       user: this.db.define('user', {
@@ -23,7 +24,46 @@ export default class Database {
       }, {
         paranoid: true,
       }),
+      pair: this.db.define('pair', {
+        id: {
+          type: Sequelize.DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+        },
+        userA: {
+          type: Sequelize.DataTypes.INTEGER,
+        },
+        userB: {
+          type: Sequelize.DataTypes.INTEGER,
+        },
+      }, {
+        paranoid: true,
+      }),
+      pairCode: this.db.define('pairCode', {
+        /* userId */
+        code: {
+          type: Sequelize.DataTypes.STRING,
+          allowNull: false,
+        },
+      }, {
+        paranoid: true,
+        deletedAt: 'expires',
+      }),
     };
+
+    this.models.user.belongsToMany(this.models.user, {
+      through: this.models.pair,
+      as: 'userA',
+      foreignKey: 'userA',
+    });
+    this.models.user.belongsToMany(this.models.user, {
+      through: this.models.pair,
+      as: 'userB',
+      foreignKey: 'userB',
+    });
+    this.models.user.hasOne(this.models.pairCode, {
+      foreignKey: 'userId',
+    });
   }
 
   async authenticate() {
@@ -33,12 +73,43 @@ export default class Database {
 
   async addUser(username, password) {
     const hash = bcrypt.hashSync(password, this.saltRound);
-    return this.models.user.create({ username, hash });
+    return this.models.user.create({
+      username,
+      hash,
+    });
   }
 
   async getUser(username, password) {
     const user = await this.models.user.findOne({ where: { username } });
     if (user && bcrypt.compareSync(password, user.hash)) return user;
     return null;
+  }
+
+  async generatePairCode(id) {
+    await this.models.pairCode.destroy({ where: { id } });
+    return this.models.pairCode.create({
+      userId: id,
+      code: UUIDv4(),
+      expires: Date.now() + (1000 * 60 * 5),
+    });
+  }
+
+  async revokePairCode(code) {
+    const c = await this.models.pairCode.destroy({ where: { code } });
+    return c >= 1;
+  }
+
+  async acceptPairCode(code, id) {
+    const { userId } = await this.models.pairCode.findOne({ where: { code } });
+    await this.revokePairCode(code);
+    try {
+      await this.models.pairCode.create({
+        userA: id,
+        userB: userId,
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

@@ -12,6 +12,7 @@
     "server:serve": "nodemon --watch server --ext js,graphqls --exec \"cross-env BABEL_ENV=node babel-node server/src\""
   },
   "dependencies": {
+    "@chenfengyuan/vue-qrcode": "^1.0.0",
     "@fortawesome/fontawesome-free": "^5.2.0",
     "apollo-boost": "^0.1.28",
     "apollo-server-koa": "^2.4.0",
@@ -31,8 +32,10 @@
     "roboto-fontface": "*",
     "sequelize": "^4.42.0",
     "sqlite3": "^4.0.6",
+    "uuid": "^3.3.2",
     "vue": "^2.5.22",
     "vue-apollo": "^3.0.0-beta.28",
+    "vue-qrcode-reader": "^1.4.0",
     "vue-router": "^3.0.1",
     "vuetify": "^1.5.0",
     "vuex": "^3.0.1"

@@ -1,0 +1,3 @@
+mutation ($code: String!) {
+    revokePairCode(code: $code)
+}
