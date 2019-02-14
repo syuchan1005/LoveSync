@@ -1,12 +1,20 @@
+scalar DateTime
+
 schema {
     query: Query
     mutation: Mutation
 }
 
 type Query {
-    test: String!
+    user: User!
 }
 
 type Mutation {
-    hello: String!
+    createAccount(username: String!, password: String!): User!
+}
+
+type User {
+    id: ID!
+    username: String!
+    createdAt: DateTime!
 }

@@ -10,13 +10,18 @@
         </v-toolbar>
 
         <v-card-text>
-          <v-text-field label="Username" prepend-icon="fas fa-user"/>
-          <v-text-field type="password" clearable label="Password" prepend-icon="fas fa-lock"/>
+          <v-text-field v-model="username" label="Username" prepend-icon="fas fa-user"/>
+          <v-text-field v-model="password" :type="showPass ? 'text' : 'password'"
+                        label="Password" prepend-icon="fas fa-lock"
+            :append-icon="showPass ? 'fas fa-eye-slash' : 'fas fa-eye'"
+            @click:append="showPass = !showPass"/>
         </v-card-text>
 
         <v-card-actions>
           <v-spacer/>
-          <v-btn :color="signup ? 'warning' : 'primary'">{{ signup ? 'Sign Up' : 'Sign in'}}</v-btn>
+          <v-btn :color="signup ? 'warning' : 'primary'" @click="signIn">
+            {{ signup ? 'Sign Up' : 'Sign in'}}
+          </v-btn>
           <v-spacer/>
         </v-card-actions>
 
@@ -36,13 +41,41 @@ export default {
   data() {
     return {
       signup: false,
+      showPass: false,
+      username: '',
+      password: '',
     };
+  },
+  methods: {
+    signIn() {
+      if (!this.signup) {
+        this.$http({
+          method: 'POST',
+          url: '/api/signin',
+          data: {
+            username: this.username,
+            password: this.password,
+          },
+          withCredentials: true,
+        }).then((res) => {
+          if (res.data.startsWith('/')) this.$router.push(res.data);
+        });
+      } else {
+        this.$apollo.mutate({
+          // eslint-disable-next-line
+          mutation: require('../graphql/createAccount.gql'),
+          variables: {
+            username: this.username,
+            password: this.password,
+          },
+        }).then(() => {
+          this.$router.push('/home');
+        });
+      }
+    },
   },
 };
 </script>
 
 <style scoped lang="scss">
-  .card {
-
-  }
 </style>

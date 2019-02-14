@@ -9,7 +9,7 @@
       </v-btn>
     </v-layout>
 
-    <v-text-field label="Username" value="test" readonly/>
+    <v-text-field label="Username" :value="user.username" readonly/>
 
     <v-list>
       <v-subheader>
@@ -37,6 +37,10 @@
 
 <script>
 export default {
+  apollo: {
+    // eslint-disable-next-line
+    user: require('../graphql/user.gql'),
+  },
   name: 'Setting',
   computed: {
     avatarSize() {

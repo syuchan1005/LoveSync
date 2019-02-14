@@ -13,7 +13,7 @@
     </v-content>
 
     <v-bottom-nav app fixed :value="$route.path !== '/'" :active="$route.path"
-                  @update:active="(p) => $router.push(p)">
+                  @update:active="(p) => { if ($route.path !== '/') $router.push(p) }">
       <v-btn color="blue" flat value="/home">
         <span>Home</span>
         <v-icon>fas fa-home</v-icon>
@@ -32,7 +32,11 @@ export default {
   name: 'App',
   methods: {
     signOut() {
-      // this.$router.push('/');
+      this.$http({
+        method: 'GET',
+        url: '/api/signout',
+      });
+      this.$router.push('/');
     },
   },
 };

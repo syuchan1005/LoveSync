@@ -1,0 +1,5 @@
+mutation ($username: String!, $password: String!){
+    createAccount(username: $username password: $password) {
+        id
+    }
+}
