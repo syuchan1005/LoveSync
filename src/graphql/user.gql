@@ -3,5 +3,9 @@
         id
         username
         createdAt
+
+        pairs {
+            username
+        }
     }
 }

@@ -11,18 +11,18 @@
 
     <v-text-field label="Username" :value="user.username" readonly />
 
-    <v-list v-if="user.pair">
+    <v-list v-if="user.pairs.length !== 0">
       <v-subheader>
         Pair
       </v-subheader>
-      <v-list-tile avatar>
+      <v-list-tile avatar v-for="u in user.pairs" :key="u.id">
         <!--<v-list-tile-avatar>
           <img src="https://vuetifyjs.com/apple-touch-icon-180x180.png" alt="avatar">
         </v-list-tile-avatar>-->
 
         <v-list-tile-content>
-          <v-list-tile-title>Username</v-list-tile-title>
-          <v-list-tile-sub-title>by 2019/02/14 14:20</v-list-tile-sub-title>
+          <v-list-tile-title>{{ u.username }}</v-list-tile-title>
+          <v-list-tile-sub-title>by ----/--/-- --:--</v-list-tile-sub-title>
         </v-list-tile-content>
 
         <v-list-tile-action>
@@ -89,6 +89,7 @@ export default {
   name: 'Setting',
   data() {
     return {
+      user: { pairs: [] },
       pair: '',
       pairCode: '',
     };

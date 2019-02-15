@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <round-button :width="buttonSize" :height="buttonSize"
-                  :border-color="colors[a % colors.length]" @click="a++">
+                  :border-color="colors[colorNum]" @click="clickPush">
       <span class="display-1 white--text">Excited?</span>
     </round-button>
   </div>
@@ -16,13 +16,23 @@ export default {
   name: 'Home',
   data() {
     return {
-      a: 0,
+      colorNum: 0,
       colors: ['#B0BEC5', '#E91E63', '#8BC34A'],
     };
   },
   computed: {
     buttonSize() {
       return Math.min(this.$vuetify.clientWidth * 0.8, this.$vuetify.clientHeight * 0.8, 480);
+    },
+  },
+  methods: {
+    clickPush() {
+      this.$apollo.mutate({
+        // eslint-disable-next-line
+        mutation: require('../graphql/push.gql'),
+      }).then(({ data }) => {
+        this.colorNum = data.push[0].success ? 2 : 1;
+      });
     },
   },
 };

@@ -15,6 +15,8 @@ type Mutation {
     generatePairCode: Code!
     revokePairCode(code: String!): Boolean!
     acceptPairCode(code: String!): Boolean!
+
+    push(userIds: [ID!]!): [PushResult!]!
 }
 
 type User {
@@ -22,10 +24,15 @@ type User {
     username: String!
     createdAt: DateTime!
 
-    pair: User
+    pairs: [User!]!
 }
 
 type Code {
     code: String!
     expires: DateTime!
+}
+
+type PushResult {
+    user: User!
+    success: Boolean!
 }

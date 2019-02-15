@@ -1,0 +1,8 @@
+mutation {
+    push(userIds: []) {
+        user {
+            username
+        }
+        success
+    }
+}
