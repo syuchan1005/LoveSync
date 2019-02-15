@@ -8,7 +8,6 @@ module.exports = {
       swSrc: 'src/service-worker.js',
       swDest: 'service-worker.js',
     },
-    /*
     iconPaths: {
       favicon32: 'icons/32.png',
       favicon16: 'icons/16.png',
@@ -16,7 +15,6 @@ module.exports = {
       maskIcon: 'safari-pinned-tab.svg',
       msTileImage: 'icons/144.png',
     },
-    */
     appleMobileWebAppCapable: 'yes',
     appleMobileWebAppStatusBarStyle: 'black-translucent',
     name: 'LoveSync',

@@ -1,14 +1,15 @@
 <template>
   <v-app>
-    <v-toolbar app v-if="$route.path !== '/'">
+    <v-toolbar app v-if="$route.path !== '/'" class="appHeader">
       <v-toolbar-title class="headline">LoveSync</v-toolbar-title>
-      <v-spacer />
+      <v-spacer/>
       <v-btn color="primary" outline @click="signOut">
-        <v-icon left>fas fa-sign-out-alt</v-icon>Sign Out
+        <v-icon left>fas fa-sign-out-alt</v-icon>
+        Sign Out
       </v-btn>
     </v-toolbar>
 
-    <v-content>
+    <v-content class="appContent">
       <router-view/>
 
       <v-snackbar v-model="showReloadAlert"
@@ -21,7 +22,8 @@
     </v-content>
 
     <v-bottom-nav app fixed :value="$route.path !== '/'" :active="$route.path"
-                  @update:active="(p) => { if ($route.path !== '/') $router.push(p) }">
+                  @update:active="(p) => { if ($route.path !== '/') $router.push(p) }"
+                  class="appFooter">
       <v-btn color="blue" flat value="/home">
         <span>Home</span>
         <v-icon>fas fa-home</v-icon>
@@ -58,3 +60,19 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+  .appHeader {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .appContent {
+    margin-top: env(safe-area-inset-top);
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+
+  .appFooter {
+    height: auto !important;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+</style>
