@@ -10,11 +10,15 @@
         </v-toolbar>
 
         <v-card-text>
-          <v-text-field v-model="username" label="Username" prepend-icon="fas fa-user"/>
-          <v-text-field v-model="password" :type="showPass ? 'text' : 'password'"
-                        label="Password" prepend-icon="fas fa-lock"
-                        :append-icon="showPass ? 'fas fa-eye-slash' : 'fas fa-eye'"
-                        @click:append="showPass = !showPass"/>
+          <v-form ref="userForm" lazy-validation>
+            <v-text-field v-model="username" label="Username" prepend-icon="fas fa-user" counter
+              :rules="rules.username"/>
+            <v-text-field v-model="password" :type="showPass ? 'text' : 'password'"
+                          label="Password" prepend-icon="fas fa-lock" counter
+                          :append-icon="showPass ? 'fas fa-eye-slash' : 'fas fa-eye'"
+                          @click:append="showPass = !showPass"
+                          :rules="rules.password" />
+          </v-form>
         </v-card-text>
 
         <v-card-actions>
@@ -32,6 +36,13 @@
         </v-card-actions>
       </v-card>
     </v-flex>
+
+    <v-snackbar v-model="showError" auto-height bottom :timeout="2000">
+      {{ errorText }}
+      <v-btn color="pink" flat @click="showError = false">
+        Close
+      </v-btn>
+    </v-snackbar>
   </v-layout>
 </template>
 
@@ -44,10 +55,20 @@ export default {
       showPass: false,
       username: '',
       password: '',
+      errorText: '',
+      showError: false,
+      rules: {
+        username: [v => !!v || 'Username is required'],
+        password: [
+          v => !!v || 'Password is required',
+          v => (v && v.length >= 8) || 'Password must be more than 8 chars',
+        ],
+      },
     };
   },
   methods: {
     async signIn() {
+      if (!this.$refs.userForm.validate()) return;
       if (this.signup) {
         await this.$apollo.mutate({
           // eslint-disable-next-line
@@ -79,6 +100,10 @@ export default {
           this.$nextTick(() => {
             this.$router.push('/home');
           });
+        })
+        .catch(() => {
+          this.errorText = 'User not found';
+          this.showError = true;
         });
     },
   },

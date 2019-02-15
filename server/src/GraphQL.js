@@ -26,7 +26,11 @@ class GraphQL {
 
   get Mutation() {
     return {
-      createAccount: (parent, { username, password }) => this.db.addUser(username, password),
+      createAccount: (parent, { username, password }) => {
+        if (username.length > 0) throw new Error('Username is required');
+        if (password.length < 8) throw new Error('Password must be more than 8 chars');
+        return this.db.addUser(username, password);
+      },
       deleteAccount: async (parent, args, { user }) => {
         if (!user) throw new Error('User not found');
         await user.removePairs();
