@@ -1,15 +1,16 @@
 <template>
   <v-app>
-    <v-toolbar app v-if="$route.path !== '/'" class="appHeader">
+    <v-toolbar app v-if="$route.path !== '/'"
+               :class="{appHeader:$route.path !== '/'}" color="pink accent-2">
       <v-toolbar-title class="headline">LoveSync</v-toolbar-title>
       <v-spacer/>
-      <v-btn color="primary" outline @click="signOut">
+      <v-btn depressed @click="signOut">
         <v-icon left>fas fa-sign-out-alt</v-icon>
         Sign Out
       </v-btn>
     </v-toolbar>
 
-    <v-content class="appContent">
+    <v-content :class="{appContent:$route.path !== '/'}">
       <router-view/>
 
       <v-snackbar v-model="showReloadAlert"
@@ -23,7 +24,7 @@
 
     <v-bottom-nav app fixed :value="$route.path !== '/'" :active="$route.path"
                   @update:active="(p) => { if ($route.path !== '/') $router.push(p) }"
-                  class="appFooter">
+                  :class="{appFooter:$route.path !== '/'}">
       <v-btn color="blue" flat value="/home">
         <span>Home</span>
         <v-icon>fas fa-home</v-icon>
