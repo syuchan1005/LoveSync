@@ -12,12 +12,12 @@
         <v-card-text>
           <v-form ref="userForm" lazy-validation>
             <v-text-field v-model="username" label="Username" prepend-icon="fas fa-user" counter
-              :rules="rules.username"/>
+                          :rules="rules.username"/>
             <v-text-field v-model="password" :type="showPass ? 'text' : 'password'"
                           label="Password" prepend-icon="fas fa-lock" counter
                           :append-icon="showPass ? 'fas fa-eye-slash' : 'fas fa-eye'"
                           @click:append="showPass = !showPass"
-                          :rules="rules.password" />
+                          :rules="rules.password"/>
           </v-form>
         </v-card-text>
 
@@ -77,7 +77,11 @@ export default {
             username: this.username,
             password: this.password,
           },
+        }).catch((e) => {
+          this.errorText = e.graphQLErrors[0].message;
+          this.showError = true;
         });
+        if (this.showError) return;
       }
       this.$http({
         method: 'POST',

@@ -10,6 +10,14 @@
 
     <v-content>
       <router-view/>
+
+      <v-snackbar v-model="showReloadAlert"
+                  auto-height bottom :timeout="0" color="success">
+        Update Available! Please Reload.
+        <v-btn color="warning" @click="locationReload(true)">
+          Reload
+        </v-btn>
+      </v-snackbar>
     </v-content>
 
     <v-bottom-nav app fixed :value="$route.path !== '/'" :active="$route.path"
@@ -30,7 +38,20 @@
 
 export default {
   name: 'App',
+  data() {
+    return {
+      showReloadAlert: false,
+    };
+  },
+  mounted() {
+    if (window.isUpdateAvailable) {
+      window.isUpdateAvailable.then((available) => {
+        this.showReloadAlert = available;
+      });
+    }
+  },
   methods: {
+    locationReload: val => window.location.reload(val),
     signOut() {
       this.$router.push('/');
     },

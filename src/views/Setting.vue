@@ -30,19 +30,19 @@
         </v-list-tile-action>
       </v-list-tile>
     </v-list>
-    <v-card v-else>
+    <v-card v-else class="card">
       <v-layout v-if="pair === ''"
         column justify-center align-center>
         <div class="headline">Pairing</div>
-        <!--<v-btn large outline @click="pair = 'read'">
-          <v-icon left>fas fa-camera</v-icon>Read QR Code
-        </v-btn>-->
         <v-btn large outline @click="showQRCode">
           <v-icon left>fas fa-qrcode</v-icon>Show Code
         </v-btn>
         <v-layout align-center justify-space-between>
-          <v-text-field v-model="pairCode" label="code"
-                        append-icon="fas fa-camera" @click:append="pair = 'read'" />
+          <v-form ref="codeForm">
+            <v-text-field v-model="pairCode" label="code"
+                          append-icon="fas fa-camera" @click:append="pair = 'read'"
+                          :rules="codeRule" />
+          </v-form>
           <v-btn color="secondary" @click="checkCode">pair</v-btn>
         </v-layout>
       </v-layout>
@@ -68,6 +68,13 @@
     <v-btn color="error" block outline @click="deleteAccount">
       Delete Account
     </v-btn>
+
+    <v-snackbar v-model="showError" absolute auto-height bottom :timeout="1500">
+      {{ errorText }}
+      <v-btn color="pink" flat @click="showError = false">
+        Close
+      </v-btn>
+    </v-snackbar>
   </div>
 </template>
 
@@ -92,6 +99,13 @@ export default {
       user: { pairs: [] },
       pair: '',
       pairCode: '',
+      uuidv4: new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i),
+      codeRule: [
+        v => !!v || 'Code is required.',
+        v => (v && !!v.match(this.uuidv4)) || 'Invalid code',
+      ],
+      errorText: '',
+      showError: false,
     };
   },
   computed: {
@@ -101,6 +115,7 @@ export default {
   },
   methods: {
     checkCode() {
+      if (!this.$refs.codeForm.validate()) return;
       this.$apollo.mutate({
         // eslint-disable-next-line
         mutation: require('../graphql/acceptPairCode.gql'),
@@ -109,6 +124,9 @@ export default {
         },
       }).then(() => {
         this.$apollo.queries.user.refresh();
+      }).catch((e) => {
+        this.errorText = e.graphQLErrors[0].message;
+        this.showError = true;
       });
     },
     showQRCode() {
@@ -154,9 +172,9 @@ export default {
 <style scoped lang="scss">
   .setting {
     margin: 16px;
+  }
 
-    & > * {
-      margin-bottom: 16px;
-    }
+  .card {
+    padding: 8px 0;
   }
 </style>

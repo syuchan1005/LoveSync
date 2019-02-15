@@ -2,6 +2,8 @@ import Sequelize from 'sequelize';
 import bcrypt from 'bcrypt';
 import UUIDv4 from 'uuid/v4';
 
+const uuidv4 = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i);
+
 export default class Database {
   constructor(filePath, saltRound) {
     this.sequelize = Sequelize;
@@ -114,6 +116,12 @@ export default class Database {
       });
       return count > 0;
     };
+    // eslint-disable-next-line
+    this.models.pairCode.revoke = function (where) {
+      return self.models.pairCode.update({
+        expires: Date.now() - 1,
+      }, { where, paranoid: false });
+    };
 
     this.models.user.belongsToMany(this.models.user, {
       through: this.models.pair,
@@ -138,10 +146,14 @@ export default class Database {
 
   async addUser(username, password) {
     const hash = bcrypt.hashSync(password, this.saltRound);
-    return this.models.user.create({
-      username,
-      hash,
-    });
+    try {
+      return await this.models.user.create({
+        username,
+        hash,
+      });
+    } catch (e) {
+      throw new Error('User exists');
+    }
   }
 
   async getUser(username, password) {
@@ -151,7 +163,7 @@ export default class Database {
   }
 
   async generatePairCode(id) {
-    await this.models.pairCode.destroy({ where: { id } });
+    await this.models.pairCode.revoke({ id });
     return this.models.pairCode.create({
       userId: id,
       code: UUIDv4(),
@@ -160,18 +172,21 @@ export default class Database {
   }
 
   async revokePairCode(code) {
-    const c = await this.models.pairCode.destroy({ where: { code } });
+    if (!code.match(uuidv4)) throw new Error('Invalid code');
+    const [c] = await this.models.pairCode.revoke({ code });
     return c >= 1;
   }
 
   async acceptPairCode(code, id) {
-    const { userId } = await this.models.pairCode.findOne({ where: { code } });
-    console.log(id, userId);
+    if (!code.match(uuidv4)) throw new Error('Invalid code');
+    const pairCode = await this.models.pairCode.findOne({ where: { code } });
+    if (!pairCode) throw new Error('User not found from code');
     await this.revokePairCode(code);
+    if (id === pairCode.userId) throw new Error('Same user');
     try {
       await this.models.pair.create({
         userA: id,
-        userB: userId,
+        userB: pairCode.userId,
       });
       return true;
     } catch (e) {
