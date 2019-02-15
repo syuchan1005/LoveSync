@@ -4,11 +4,14 @@
   "private": true,
   "scripts": {
     "serve": "run-p client:serve server:serve",
+    "build": "run-s client:build server:build",
+    "start": "cross-env NODE_ENV=production node dist-server",
     "client:build": "cross-env BABEL_ENV=vue vue-cli-service build",
     "client:lint": "cross-env BABEL_ENV=vue vue-cli-service lint",
     "client:serve": "cross-env BABEL_ENV=vue vue-cli-service serve",
     "client:test:e2e": "cross-env BABEL_ENV=vue vue-cli-service test:e2e",
     "client:test:unit": "cross-env BABEL_ENV=vue vue-cli-service test:unit",
+    "server:build": "cross-env BABEL_ENV=node babel server/src -d dist-server",
     "server:serve": "nodemon --watch server --ext js,graphqls --exec \"cross-env BABEL_ENV=node babel-node server/src\""
   },
   "dependencies": {
@@ -44,6 +47,7 @@
     "apollo-link-context": "latest"
   },
   "devDependencies": {
+    "@babel/cli": "^7.2.3",
     "@babel/core": "^7.2.2",
     "@babel/node": "^7.2.2",
     "@babel/preset-env": "^7.3.1",
