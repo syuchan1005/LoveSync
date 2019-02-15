@@ -14,21 +14,29 @@ class GraphQL {
   get Query() {
   /* eslint-enable */
     return {
-      user: (parent, args, { state }) => state.user,
+      user: (parent, args, { user }) => {
+        if (!user) throw new Error('User not found');
+        return user;
+      },
     };
   }
 
   get Mutation() {
     return {
       createAccount: (parent, { username, password }) => this.db.addUser(username, password),
-      generatePairCode: (parent, args, ctx) => {
-        if (!ctx.isAuthenticated()) throw new Error('User not found');
-        return this.db.generatePairCode(ctx.state.user.id);
+      deleteAccount: async (parent, args, { user }) => {
+        if (!user) throw new Error('User not found');
+        await user.destroy();
+        return true;
+      },
+      generatePairCode: (parent, args, { user }) => {
+        if (!user) throw new Error('User not found');
+        return this.db.generatePairCode(user.id);
       },
       revokePairCode: (parent, { code }) => this.db.revokePairCode(code),
-      acceptPairCode: (parent, { code }, ctx) => {
-        if (!ctx.isAuthenticated()) throw new Error('User not found');
-        return this.db.acceptPairCode(code, ctx.state.user.id);
+      acceptPairCode: (parent, { code }, { user }) => {
+        if (!user) throw new Error('User not found');
+        return this.db.acceptPairCode(code, user.id);
       },
     };
   }
@@ -54,7 +62,19 @@ class GraphQL {
         Query: this.Query,
         Mutation: this.Mutation,
       },
-      context: ({ ctx }) => ctx,
+      context: async ({ ctx }) => {
+        let user = null;
+        if (ctx.request.header.authorization) {
+          const accessToken = ctx.request.header.authorization.slice(7);
+          if (accessToken) {
+            user = await this.db.models.user.findOne({
+              where: { accessToken },
+            });
+          }
+          if (user && user.accessTokenExpiresAt < Date.now()) user = null;
+        }
+        return { ctx, user };
+      },
     });
     this.server.applyMiddleware({ app });
   }

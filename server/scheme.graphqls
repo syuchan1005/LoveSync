@@ -11,6 +11,7 @@ type Query {
 
 type Mutation {
     createAccount(username: String!, password: String!): User!
+    deleteAccount: Boolean!
     generatePairCode: Code!
     revokePairCode(code: String!): Boolean!
     acceptPairCode(code: String!): Boolean!

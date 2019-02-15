@@ -32,32 +32,42 @@
     </v-list>
     <v-card v-else>
       <v-layout v-if="pair === ''"
-        fill-height column justify-center align-center style="padding: 8px 0">
+        column justify-center align-center>
         <div class="headline">Pairing</div>
-        <v-btn large outline @click="pair = 'read'">
+        <!--<v-btn large outline @click="pair = 'read'">
           <v-icon left>fas fa-camera</v-icon>Read QR Code
-        </v-btn>
+        </v-btn>-->
         <v-btn large outline @click="showQRCode">
-          <v-icon left>fas fa-qrcode</v-icon>Show QR Code
+          <v-icon left>fas fa-qrcode</v-icon>Show Code
         </v-btn>
+        <v-layout align-center justify-space-between>
+          <v-text-field v-model="pairCode" label="code"
+                        append-icon="fas fa-camera" @click:append="pair = 'read'" />
+          <v-btn color="secondary" @click="checkCode">pair</v-btn>
+        </v-layout>
       </v-layout>
       <v-layout v-else-if="pair === 'show'"
                 fill-height column justify-center align-center>
         <qrcode :value="pairCode" :options="{ width: Math.min($vuetify.clientWidth * 0.8, 250) }"/>
+        <v-text-field v-model="pairCode" label="code" readonly
+                      append-outer-icon="fas fa-clipboard"
+                      @click:append-outer="copyClipBoard(pairCode)" />
         <v-btn outline @click="backShowQRCode">
           <v-icon left>fas fa-angle-left</v-icon>back
         </v-btn>
       </v-layout>
       <v-layout v-else-if="pair === 'read'"
                 fill-height column justify-center align-center>
-        <qrcode-stream :track="false" @decode="decodeQR" />
+        <qrcode-stream :track="false" @decode="(res) => { this.pairCode = res; this.pair = ''; }" />
         <v-btn outline @click="pair = ''">
           <v-icon left>fas fa-angle-left</v-icon>back
         </v-btn>
       </v-layout>
     </v-card>
 
-    <v-btn color="error" block outline>Delete Account</v-btn>
+    <v-btn color="error" block outline @click="deleteAccount">
+      Delete Account
+    </v-btn>
   </div>
 </template>
 
@@ -71,8 +81,10 @@ export default {
     QrcodeStream,
   },
   apollo: {
-    // eslint-disable-next-line
-    user: require('../graphql/user.gql'),
+    user: {
+      // eslint-disable-next-line
+      query: require('../graphql/user.gql'),
+    },
   },
   name: 'Setting',
   data() {
@@ -87,12 +99,12 @@ export default {
     },
   },
   methods: {
-    decodeQR(result) {
+    checkCode() {
       this.$apollo.mutate({
         // eslint-disable-next-line
         mutation: require('../graphql/acceptPairCode.gql'),
         variables: {
-          code: result,
+          code: this.pairCode,
         },
       }).then(() => {
         this.$apollo.queries.user.refresh();
@@ -102,8 +114,8 @@ export default {
       this.$apollo.mutate({
         // eslint-disable-next-line
         mutation: require('../graphql/generatePairCode.gql'),
-      }).then(({ code }) => {
-        this.pairCode = code;
+      }).then(({ data }) => {
+        this.pairCode = data.generatePairCode.code;
         this.pair = 'show';
       });
     },
@@ -115,8 +127,24 @@ export default {
           code: this.pairCode,
         },
       }).then(() => {
+        this.pairCode = '';
         this.pair = '';
       });
+    },
+    copyClipBoard(text) {
+      const e = document.createElement('input');
+      e.value = text;
+      document.body.appendChild(e);
+      e.select();
+      document.execCommand('copy');
+      document.body.removeChild(e);
+    },
+    async deleteAccount() {
+      await this.$apollo.mutate({
+        // eslint-disable-next-line
+        mutation: require('../graphql/deleteAccount.gql'),
+      });
+      this.$router.push('/');
     },
   },
 };

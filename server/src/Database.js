@@ -21,6 +21,18 @@ export default class Database {
           type: Sequelize.DataTypes.STRING,
           allowNull: false,
         },
+        accessToken: {
+          type: Sequelize.STRING,
+        },
+        accessTokenExpiresAt: {
+          type: Sequelize.DATE,
+        },
+        refreshToken: {
+          type: Sequelize.STRING,
+        },
+        refreshTokenExpiresAt: {
+          type: Sequelize.DATE,
+        },
       }, {
         paranoid: true,
       }),

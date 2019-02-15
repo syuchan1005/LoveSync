@@ -32,10 +32,6 @@ export default {
   name: 'App',
   methods: {
     signOut() {
-      this.$http({
-        method: 'GET',
-        url: '/api/signout',
-      });
       this.$router.push('/');
     },
   },
