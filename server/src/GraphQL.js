@@ -27,7 +27,7 @@ class GraphQL {
   get Mutation() {
     return {
       createAccount: (parent, { username, password }) => {
-        if (username.length > 0) throw new Error('Username is required');
+        if (username.length === 0) throw new Error('Username is required');
         if (password.length < 8) throw new Error('Password must be more than 8 chars');
         return this.db.addUser(username, password);
       },
@@ -61,6 +61,7 @@ class GraphQL {
             ],
           },
         }));
+        if (pairs.length === 0) throw new Error('Need pairing in setting');
         await Util.mapAsync(pairs, ({ id }) => this.db.models.push.create({
           pairId: id,
           userId: user.id,

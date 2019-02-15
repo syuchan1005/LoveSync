@@ -4,6 +4,13 @@
                   :border-color="colors[colorNum]" @click="clickPush">
       <span class="display-1 white--text">Excited?</span>
     </round-button>
+
+    <v-snackbar v-model="showError" absolute auto-height bottom :timeout="1500">
+      {{ errorText }}
+      <v-btn color="pink" flat @click="showError = false">
+        Close
+      </v-btn>
+    </v-snackbar>
   </div>
 </template>
 
@@ -18,6 +25,8 @@ export default {
     return {
       colorNum: 0,
       colors: ['#B0BEC5', '#E91E63', '#8BC34A'],
+      errorText: '',
+      showError: false,
     };
   },
   computed: {
@@ -32,6 +41,9 @@ export default {
         mutation: require('../graphql/push.gql'),
       }).then(({ data }) => {
         this.colorNum = data.push[0].success ? 2 : 1;
+      }).catch((e) => {
+        this.errorText = e.graphQLErrors[0].message;
+        this.showError = true;
       });
     },
   },
