@@ -92,6 +92,17 @@ export default {
       // eslint-disable-next-line
       query: require('../graphql/user.gql'),
     },
+    /*
+    $subscribe: {
+      test: {
+        // eslint-disable-next-line
+        query: require('../graphql/testSubscription.gql'),
+        result({ data: { test } }) {
+          console.log(test);
+        },
+      },
+    },
+    */
   },
   title: 'Setting',
   name: 'Setting',

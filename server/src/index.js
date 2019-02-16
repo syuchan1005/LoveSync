@@ -52,7 +52,8 @@ if (process.env.NODE_ENV === 'production') {
 db.authenticate()
   .then(() => {
     const port = process.env.PORT || 3000;
-    app.listen(port, () => {
+    const httpServer = app.listen(port, () => {
       console.log(`Now listen at http://localhost:${port}`);
     });
+    graphQL.subscription(httpServer);
   });

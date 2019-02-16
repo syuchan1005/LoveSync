@@ -3,6 +3,7 @@ scalar DateTime
 schema {
     query: Query
     mutation: Mutation
+    subscription: Subscription
 }
 
 type Query {
@@ -17,6 +18,10 @@ type Mutation {
     acceptPairCode(code: String!): Boolean!
 
     push(userIds: [ID!]!): [PushResult!]!
+}
+
+type Subscription {
+    test: Boolean!
 }
 
 type User {

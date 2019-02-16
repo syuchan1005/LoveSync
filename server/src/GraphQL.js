@@ -1,6 +1,7 @@
 import fs from 'fs';
 
 import { ApolloServer, gql } from 'apollo-server-koa';
+import { PubSub } from 'graphql-subscriptions';
 import { GraphQLDateTime } from 'graphql-iso-date';
 
 import Util from './Util';
@@ -9,10 +10,10 @@ class GraphQL {
   constructor(schemePath, db) {
     this.db = db;
     this.typeDefs = gql`${fs.readFileSync(schemePath)}`;
+    this.pubsub = new PubSub();
   }
 
   /* eslint-disable */
-
   // noinspection JSMethodCanBeStatic
   get Query() {
     /* eslint-enable */
@@ -81,6 +82,14 @@ class GraphQL {
     };
   }
 
+  get Subscription() {
+    return {
+      test: {
+        subscribe: () => this.pubsub.asyncIterator(['test']),
+      },
+    };
+  }
+
   get User() {
     return {
       pairs: async (user) => {
@@ -93,6 +102,17 @@ class GraphQL {
     };
   }
 
+  async getUser(accessToken) {
+    let user;
+    if (accessToken) {
+      user = await this.db.models.user.findOne({
+        where: { accessToken },
+      });
+    }
+    if (user && user.accessTokenExpiresAt < Date.now()) user = null;
+    return user;
+  }
+
   middleware(app) {
     this.server = new ApolloServer({
       typeDefs: this.typeDefs,
@@ -101,25 +121,33 @@ class GraphQL {
         User: this.User,
         Query: this.Query,
         Mutation: this.Mutation,
+        Subscription: this.Subscription,
       },
-      context: async ({ ctx }) => {
-        let user = null;
-        if (ctx.request.header.authorization) {
-          const accessToken = ctx.request.header.authorization.slice(7);
-          if (accessToken) {
-            user = await this.db.models.user.findOne({
-              where: { accessToken },
-            });
+      subscriptions: {
+        onConnect: async (param) => {
+          if (param.authorization) {
+            return {
+              user: await this.getUser(param.authorization.substring(7)),
+            };
           }
-          if (user && user.accessTokenExpiresAt < Date.now()) user = null;
+          return {};
+        },
+      },
+      context: async ({ ctx, connection }) => {
+        if (connection) {
+          return connection.context;
         }
         return {
           ctx,
-          user,
+          user: await this.getUser(ctx.request.header.authorization.slice(7)),
         };
       },
     });
     this.server.applyMiddleware({ app });
+  }
+
+  subscription(httpServer) {
+    this.server.installSubscriptionHandlers(httpServer);
   }
 }
 
