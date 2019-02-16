@@ -93,6 +93,7 @@ export default {
       query: require('../graphql/user.gql'),
     },
   },
+  title: 'Setting',
   name: 'Setting',
   data() {
     return {

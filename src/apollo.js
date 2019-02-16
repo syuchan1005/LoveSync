@@ -8,7 +8,24 @@ import { onError } from 'apollo-link-error';
 import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 
+import store from './store';
+
 Vue.use(VueApollo);
+
+export const refreshToken = () => Vue.prototype.$http({
+  url: '/oauth/token',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  },
+  data: Object.entries({
+    client_id: 'lovesync',
+    client_secret: 'lovesync_secret',
+    grant_type: 'refresh_token',
+    refresh_token: store.state.token.refreshToken,
+  }).reduce((p, e) => p.append(e[0], e[1]), new URLSearchParams()),
+}).then(({ data }) => {
+  store.commit('setToken', data);
+});
 
 const apolloClient = new ApolloClient({
   link: ApolloLink.from([
@@ -20,12 +37,13 @@ const apolloClient = new ApolloClient({
       }
       if (networkError) console.log(`[Network error]: ${networkError}`);
     }),
-    setContext((_, { headers }) => {
-      if (!window.sessionStorage.getItem('AccessToken')) return { headers };
+    setContext(async (_, { headers }) => {
+      if (!store.state.token.accessToken) return { headers };
+      if (store.state.token.expires <= Date.now()) await refreshToken();
       return {
         headers: {
           ...headers,
-          authorization: `Bearer ${window.sessionStorage.getItem('AccessToken')}`,
+          authorization: `Bearer ${store.state.token.accessToken}`,
         },
       };
     }).concat(new HttpLink({

@@ -56,6 +56,7 @@ export default {
   methods: {
     locationReload: val => window.location.reload(val),
     signOut() {
+      this.$store.commit('setToken', {});
       this.$router.push('/');
     },
   },

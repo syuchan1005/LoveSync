@@ -17,7 +17,8 @@
                           label="Password" prepend-icon="fas fa-lock" counter
                           :append-icon="showPass ? 'fas fa-eye-slash' : 'fas fa-eye'"
                           @click:append="showPass = !showPass"
-                          :rules="rules.password"/>
+                          :rules="rules.password"
+                          @keyup.native.enter="signIn" />
           </v-form>
         </v-card-text>
 
@@ -98,12 +99,9 @@ export default {
         })
           .reduce((p, e) => p.append(e[0], e[1]) || p, new URLSearchParams()),
       })
-        .then(({ data }) => {
-          window.sessionStorage.setItem('AccessToken', data.access_token);
-          window.sessionStorage.setItem('RefreshToken', data.refresh_token);
-          this.$nextTick(() => {
-            this.$router.push('/home');
-          });
+        .then(async ({ data }) => {
+          this.$store.commit('setToken', data);
+          this.$router.push('/home');
         })
         .catch(() => {
           this.errorText = 'User not found';

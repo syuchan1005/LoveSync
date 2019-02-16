@@ -20,6 +20,7 @@
     "apollo-cache-inmemory": "^1.4.3",
     "apollo-client": "^2.4.13",
     "apollo-link": "^1.2.8",
+    "apollo-link-context": "latest",
     "apollo-link-error": "^1.1.7",
     "apollo-link-http": "^1.5.11",
     "apollo-server-koa": "^2.4.0",
@@ -44,7 +45,7 @@
     "vue-router": "^3.0.1",
     "vuetify": "1.5.0",
     "vuex": "^3.0.1",
-    "apollo-link-context": "latest"
+    "vuex-persistedstate": "^2.5.4"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
