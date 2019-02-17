@@ -49,6 +49,7 @@
 
 <script>
 export default {
+  title: '',
   name: 'Top',
   data() {
     return {
