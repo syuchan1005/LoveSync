@@ -1,0 +1,8 @@
+subscription {
+    pair {
+        type
+        user {
+            username
+        }
+    }
+}

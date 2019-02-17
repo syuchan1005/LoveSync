@@ -16,12 +16,16 @@ type Mutation {
     generatePairCode: Code!
     revokePairCode(code: String!): Boolean!
     acceptPairCode(code: String!): Boolean!
+    deletePair(userId: ID!): Boolean!
 
     push(userIds: [ID!]!): [PushResult!]!
 }
 
 type Subscription {
-    test: Boolean!
+    pair: PairSubscription!
+
+    # [trigger] success push
+    push: User!
 }
 
 type User {
@@ -30,6 +34,7 @@ type User {
     createdAt: DateTime!
 
     pairs: [User!]!
+    pushes: [User!]!
 }
 
 type Code {
@@ -40,4 +45,14 @@ type Code {
 type PushResult {
     user: User!
     success: Boolean!
+}
+
+type PairSubscription {
+    type: PairAction!
+    user: User!
+}
+
+enum PairAction {
+    ADD
+    DELETE
 }

@@ -38,8 +38,18 @@
 </template>
 
 <script>
-
 export default {
+  apollo: {
+    $subscribe: {
+      push: {
+        // eslint-disable-next-line
+        query: require('./graphql/pushSubscription.gql'),
+        result() {
+          this.$store.commit('setColor', 2);
+        },
+      },
+    },
+  },
   name: 'App',
   data() {
     return {
@@ -76,5 +86,15 @@ export default {
   .appFooter {
     height: auto !important;
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .overlay {
+    z-index: 999999;
+    background: rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
   }
 </style>

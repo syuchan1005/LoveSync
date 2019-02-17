@@ -1,0 +1,12 @@
+{
+    user {
+        id
+        username
+        createdAt
+
+        pairs {
+            id
+            username
+        }
+    }
+}

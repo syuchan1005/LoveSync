@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "serve": "run-p client:serve server:serve",
-    "build": "run-s client:build server:build",
+    "serve": "run-p server:serve client:serve",
+    "build": "run-s server:build client:build",
     "start": "cross-env NODE_ENV=production node dist-server",
     "client:build": "cross-env BABEL_ENV=vue vue-cli-service build",
     "client:lint": "cross-env BABEL_ENV=vue vue-cli-service lint",
@@ -40,6 +40,7 @@
     "roboto-fontface": "*",
     "sequelize": "^4.42.0",
     "sqlite3": "^4.0.6",
+    "subscriptions-transport-ws": "^0.9.15",
     "uuid": "^3.3.2",
     "vue": "^2.5.22",
     "vue-apollo": "^3.0.0-beta.28",

@@ -78,8 +78,9 @@ export default {
             username: this.username,
             password: this.password,
           },
-        }).catch((e) => {
-          this.errorText = e.graphQLErrors[0].message;
+        }).catch(({ graphQLErrors, networkError }) => {
+          if (graphQLErrors) this.errorText = graphQLErrors[0].message;
+          else this.errorText = networkError;
           this.showError = true;
         });
         if (this.showError) return;

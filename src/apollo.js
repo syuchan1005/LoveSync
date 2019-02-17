@@ -9,6 +9,8 @@ import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 
 import { WebSocketLink } from 'apollo-link-ws';
+import { SubscriptionClient } from 'subscriptions-transport-ws';
+import MessageTypes from 'subscriptions-transport-ws/dist/message-types';
 
 import store from './store';
 
@@ -28,6 +30,7 @@ export const refreshToken = () => Vue.prototype.$http({
     .reduce((p, e) => p.append(e[0], e[1]), new URLSearchParams()),
 })
   .then(({ data }) => {
+    console.log('[Token Refresh]');
     store.commit('setToken', data);
   });
 
@@ -46,6 +49,20 @@ const authHeader = async (_, { headers }) => {
   };
 };
 
+const wsClient = new SubscriptionClient(`${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}${uri}`, {
+  reconnect: true,
+  connectionParams: () => authHeader({}, {}).then(({ headers }) => headers),
+});
+
+export function restartWebsocket() {
+  const operations = Object.assign({}, wsClient.operations);
+  wsClient.close(true);
+  wsClient.connect();
+  Object.keys(operations).forEach((id) => {
+    wsClient.sendMessage(id, MessageTypes.GQL_START, operations[id].options);
+  });
+}
+
 const apolloClient = new ApolloClient({
   link: ApolloLink.from([
     onError(({ graphQLErrors, networkError }) => {
@@ -54,22 +71,16 @@ const apolloClient = new ApolloClient({
           `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
         ));
       }
-      if (networkError) console.log(`[Network error]: ${networkError}`);
+      if (networkError) console.log(`[Network error]: ${JSON.stringify(networkError)}`);
     }),
     ApolloLink.split(
       hasSubscriptionOperation,
-      new WebSocketLink({
-        uri: `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}${uri}`,
-        options: {
-          reconnect: true,
-          connectionParams: () => authHeader({}, {}).then(({ headers }) => headers),
-        },
-      }),
+      new WebSocketLink(wsClient),
       setContext(authHeader).concat(new HttpLink({ uri: `${window.location.protocol}${uri}` })),
     ),
   ]),
   cache: new InMemoryCache(),
-  connectToDevTools: true,
+  connectToDevTools: process.env.NODE_ENV !== 'production',
 });
 
 const apolloProvider = new VueApollo({

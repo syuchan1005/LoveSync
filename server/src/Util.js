@@ -7,4 +7,11 @@ export default class Util {
     }
     return res;
   }
+
+  static async forEachAsync(arr, cb) {
+    for (let i = 0; i < arr.length; i += 1) {
+      // eslint-disable-next-line
+      await cb(arr[i], i, arr);
+    }
+  }
 }

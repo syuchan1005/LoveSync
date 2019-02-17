@@ -26,7 +26,9 @@
         </v-list-tile-content>
 
         <v-list-tile-action>
-          <v-btn fab small flat><v-icon>fas fa-trash</v-icon></v-btn>
+          <v-btn fab small flat @click="deletePair(u.id)">
+            <v-icon>fas fa-trash</v-icon>
+          </v-btn>
         </v-list-tile-action>
       </v-list-tile>
     </v-list>
@@ -90,19 +92,19 @@ export default {
   apollo: {
     user: {
       // eslint-disable-next-line
-      query: require('../graphql/user.gql'),
+      query: require('../graphql/userQuery.gql'),
     },
-    /*
     $subscribe: {
-      test: {
+      pair: {
         // eslint-disable-next-line
-        query: require('../graphql/testSubscription.gql'),
-        result({ data: { test } }) {
-          console.log(test);
+        query: require('../graphql/pairSubscription.gql'),
+        result() {
+          this.$apollo.queries.user.refetch();
+          this.pair = '';
+          this.pairCode = '';
         },
       },
     },
-    */
   },
   title: 'Setting',
   name: 'Setting',
@@ -135,9 +137,11 @@ export default {
           code: this.pairCode,
         },
       }).then(() => {
-        this.$apollo.queries.user.refresh();
-      }).catch((e) => {
-        this.errorText = e.graphQLErrors[0].message;
+        this.$apollo.queries.user.refetch();
+        this.pairCode = '';
+      }).catch(({ graphQLErrors, networkError }) => {
+        if (graphQLErrors) this.errorText = graphQLErrors[0].message;
+        else this.errorText = networkError;
         this.showError = true;
       });
     },
@@ -169,6 +173,14 @@ export default {
       e.select();
       document.execCommand('copy');
       document.body.removeChild(e);
+    },
+    async deletePair(userId) {
+      await this.$apollo.mutate({
+        // eslint-disable-next-line
+        mutation: require('../graphql/deletePair.gql'),
+        variables: { userId },
+      });
+      this.$apollo.queries.user.refetch();
     },
     async deleteAccount() {
       await this.$apollo.mutate({

@@ -1,0 +1,3 @@
+mutation ($userId: ID!) {
+    deletePair(userId: $userId)
+}

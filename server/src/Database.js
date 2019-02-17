@@ -1,6 +1,7 @@
 import Sequelize from 'sequelize';
 import bcrypt from 'bcrypt';
 import UUIDv4 from 'uuid/v4';
+import Util from './Util';
 
 const uuidv4 = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i);
 
@@ -11,7 +12,7 @@ export default class Database {
     this.db = new Sequelize({
       dialect: 'sqlite',
       storage: filePath,
-      // logging: false,
+      logging: false,
     });
     this.models = {
       user: this.db.define('user', {
@@ -51,6 +52,9 @@ export default class Database {
         userB: {
           type: Sequelize.INTEGER,
         },
+        deletedAt: {
+          type: Sequelize.DATE,
+        },
       }, {
         paranoid: true,
       }),
@@ -88,6 +92,21 @@ export default class Database {
           [Sequelize.Op.or]: [{ userA: this.id }, { userB: this.id }],
         },
       });
+    };
+    // eslint-disable-next-line
+    this.models.user.prototype.getSuccessUsers = async function () {
+      const pairs = await this.getPairs();
+      const users = [];
+      await Util.forEachAsync(pairs, async (pair) => {
+        if (await pair.isSuccess()) {
+          users.push(await self.models.user.findOne({
+            where: {
+              id: (pair.userA === this.id) ? pair.userB : pair.userA,
+            },
+          }));
+        }
+      });
+      return users;
     };
     // eslint-disable-next-line
     this.models.pair.prototype.isSuccess = async function () {
@@ -184,13 +203,28 @@ export default class Database {
     await this.revokePairCode(code);
     if (id === pairCode.userId) throw new Error('Same user');
     try {
-      await this.models.pair.create({
+      await this.models.pair.upsert({
         userA: id,
         userB: pairCode.userId,
+        deletedAt: null,
+      }, {
+        where: {
+          [Sequelize.Op.or]: [
+            {
+              userA: id,
+              userB: pairCode.userId,
+            },
+            {
+              userA: pairCode.userId,
+              userB: id,
+            },
+          ],
+        },
       });
-      return true;
+      return this.models.user.findOne({ where: { id: pairCode.userId } });
     } catch (e) {
-      return false;
+      console.log(e);
+      return null;
     }
   }
 }

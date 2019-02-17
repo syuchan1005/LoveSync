@@ -1,12 +1,19 @@
 import fs from 'fs';
 
 import { ApolloServer, gql } from 'apollo-server-koa';
-import { PubSub } from 'graphql-subscriptions';
+import { PubSub, withFilter } from 'graphql-subscriptions';
 import { GraphQLDateTime } from 'graphql-iso-date';
 
 import Util from './Util';
 
 class GraphQL {
+  static get topic() {
+    return {
+      PAIR_CHANGE: 'pair_change',
+      PUSH: 'push_change',
+    };
+  }
+
   constructor(schemePath, db) {
     this.db = db;
     this.typeDefs = gql`${fs.readFileSync(schemePath)}`;
@@ -14,6 +21,7 @@ class GraphQL {
   }
 
   /* eslint-disable */
+
   // noinspection JSMethodCanBeStatic
   get Query() {
     /* eslint-enable */
@@ -43,9 +51,44 @@ class GraphQL {
         return this.db.generatePairCode(user.id);
       },
       revokePairCode: (parent, { code }) => this.db.revokePairCode(code),
-      acceptPairCode: (parent, { code }, { user }) => {
+      acceptPairCode: async (parent, { code }, { user }) => {
         if (!user) throw new Error('User not found');
-        return this.db.acceptPairCode(code, user.id);
+        const source = await this.db.acceptPairCode(code, user.id);
+        this.pubsub.publish(GraphQL.topic.PAIR_CHANGE, {
+          pair: {
+            type: 'ADD',
+            user,
+            source,
+          },
+        });
+        return !!source;
+      },
+      deletePair: async (parent, { userId }, { user }) => {
+        if (!user) throw new Error('User not found');
+        const c = await this.db.models.pair.destroy({
+          where: {
+            [this.db.sequelize.Op.or]: [
+              {
+                userA: userId,
+                userB: user.id,
+              },
+              {
+                userA: user.id,
+                userB: userId,
+              },
+            ],
+          },
+        });
+        if (c === 1) {
+          this.pubsub.publish(GraphQL.topic.PAIR_CHANGE, {
+            pair: {
+              type: 'DELETE',
+              user,
+              source: await this.db.models.user.findOne({ where: { id: userId } }),
+            },
+          });
+        }
+        return c === 1;
       },
       push: async (parent, { userIds }, { user }) => {
         const pairs = await (userIds.length === 0 ? user.getPairs() : this.db.models.pair.findAll({
@@ -68,7 +111,7 @@ class GraphQL {
           userId: user.id,
           expires: Date.now() + (1000 * 60 * 5),
         }));
-        return Util.mapAsync(pairs, async (pair) => {
+        const res = await Util.mapAsync(pairs, async (pair) => {
           const success = await pair.isSuccess();
           const u = await this.db.models.user.findOne({
             where: { id: pair.userA === user.id ? pair.userB : pair.userA },
@@ -78,14 +121,38 @@ class GraphQL {
             success,
           };
         });
+        res.forEach((r) => {
+          this.pubsub.publish(GraphQL.topic.PUSH, {
+            push: r,
+            user,
+          });
+        });
+        return res;
       },
     };
   }
 
   get Subscription() {
     return {
-      test: {
-        subscribe: () => this.pubsub.asyncIterator(['test']),
+      pair: {
+        subscribe: withFilter(
+          () => this.pubsub.asyncIterator([GraphQL.topic.PAIR_CHANGE]),
+          ({ pair }, variables, { user }) => {
+            if (!user) return false;
+            return pair.source.id === user.id;
+          },
+        ),
+      },
+      push: {
+        subscribe: withFilter(
+          () => this.pubsub.asyncIterator([GraphQL.topic.PUSH]),
+          ({ push }, variables, { user }) => {
+            if (!user) return false;
+            console.log(push.success, push.user.id === user.id, push.user.id, user.id);
+            return push.success && push.user.id === user.id;
+          },
+        ),
+        resolve: ({ user }) => user,
       },
     };
   }
@@ -99,6 +166,11 @@ class GraphQL {
           where: { id: (pair.userA === user.id ? pair.userB : pair.userA) },
         }));
       },
+      pushes: /*async (user) => {
+        const u = await user.getSuccessUsers();
+        console.log(u.length);
+        return u;
+      }*/() => [],
     };
   }
 
@@ -125,7 +197,7 @@ class GraphQL {
       },
       subscriptions: {
         onConnect: async (param) => {
-          if (param.authorization) {
+          if (param && param.authorization) {
             return {
               user: await this.getUser(param.authorization.substring(7)),
             };
@@ -137,10 +209,13 @@ class GraphQL {
         if (connection) {
           return connection.context;
         }
-        return {
-          ctx,
-          user: await this.getUser(ctx.request.header.authorization.slice(7)),
-        };
+        if (ctx.request.header.authorization) {
+          return {
+            ctx,
+            user: await this.getUser(ctx.request.header.authorization.slice(7)),
+          };
+        }
+        return { ctx };
       },
     });
     this.server.applyMiddleware({ app });
