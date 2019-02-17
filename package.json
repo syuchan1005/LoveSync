@@ -1,6 +1,6 @@
 {
   "name": "lovesync",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "scripts": {
     "serve": "run-p server:serve client:serve",
